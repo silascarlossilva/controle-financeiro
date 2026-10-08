@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Finanças Pessoais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 font-sans text-slate-800">
+
+    <!-- TOPO / BANNER -->
+    <header class="bg-[#0b1b3d] text-white py-6 shadow-md">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-wide">CONTROLE DE GASTOS PESSOAIS DIÁRIOS</h1>
+            <p class="text-sm text-slate-300 mt-1">Gerencie suas receitas, despesas e investimentos em tempo real</p>
+        </div>
+    </header>
+
+    <!-- NAVEGAÇÃO / MENU -->
+    <nav class="bg-[#122c5b] shadow py-3">
+        <div class="container mx-auto px-4 flex flex-wrap justify-center gap-2">
+            <button onclick="mudarAba('dashboard')" id="btn-dashboard" class="px-4 py-2 bg-slate-200 text-slate-900 rounded-md font-medium transition hover:bg-white"><i class="fa-solid fa-home mr-2"></i>Menu / Resumo</button>
+            <button onclick="mudarAba('receitas')" id="btn-receitas" class="px-4 py-2 bg-[#1b4332] text-white rounded-md font-medium transition hover:opacity-90"><i class="fa-solid fa-arrow-trend-up mr-2"></i>Receitas</button>
+            <button onclick="mudarAba('despesas')" id="btn-despesas" class="px-4 py-2 bg-[#58181f] text-white rounded-md font-medium transition hover:opacity-90"><i class="fa-solid fa-arrow-trend-down mr-2"></i>Despesas</button>
+            <button onclick="mudarAba('investimentos')" id="btn-investimentos" class="px-4 py-2 bg-[#1d3557] text-white rounded-md font-medium transition hover:opacity-90"><i class="fa-solid fa-piggy-bank mr-2"></i>Investimentos</button>
+        </div>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="container mx-auto px-4 py-8 max-w-5xl">
+
+        <!-- ABA: DASHBOARD / MENU INICIAL -->
+        <section id="aba-dashboard" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-emerald-800 text-white p-6 rounded-xl shadow cursor-pointer hover:scale-[1.02] transition" onclick="mudarAba('receitas')">
+                    <h3 class="text-xl font-bold">RECEITAS</h3>
+                    <p class="text-sm text-emerald-100 mt-2">Registre seus ganhos e entradas de dinheiro</p>
+                </div>
+                <div class="bg-[#58181f] text-white p-6 rounded-xl shadow cursor-pointer hover:scale-[1.02] transition" onclick="mudarAba('despesas')">
+                    <h3 class="text-xl font-bold">DESPESAS</h3>
+                    <p class="text-sm text-rose-100 mt-2">Registre seus gastos e saídas de dinheiro</p>
+                </div>
+                <div class="bg-[#1b263b] text-white p-6 rounded-xl shadow cursor-pointer hover:scale-[1.02] transition" onclick="mudarAba('investimentos')">
+                    <h3 class="text-xl font-bold">INVESTIMENTOS</h3>
+                    <p class="text-sm text-slate-200 mt-2">Registre seus investimentos e aplicações</p>
+                </div>
+            </div>
+
+            <!-- CARDS DE RESUMO FINANCEIRO -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                <div class="bg-white p-5 rounded-lg shadow border-l-4 border-emerald-600">
+                    <span class="text-sm text-slate-500 font-semibold">Total Receitas</span>
+                    <h2 id="total-receitas" class="text-2xl font-bold text-emerald-700">R$ 0,00</h2>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow border-l-4 border-rose-600">
+                    <span class="text-sm text-slate-500 font-semibold">Total Despesas</span>
+                    <h2 id="total-despesas" class="text-2xl font-bold text-rose-700">R$ 0,00</h2>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow border-l-4 border-blue-600">
+                    <span class="text-sm text-slate-500 font-semibold">Saldo Líquido</span>
+                    <h2 id="total-saldo" class="text-2xl font-bold text-blue-800">R$ 0,00</h2>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA: RECEITAS -->
+        <section id="aba-receitas" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold text-[#1b4332] mb-4"><i class="fa-solid fa-plus-circle mr-2"></i>Nova Receita</h2>
+                <form id="form-receita" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="text" id="rec-origem" placeholder="Origem (Ex: Salário)" required class="border p-2 rounded focus:ring-2 focus:ring-emerald-600">
+                    <input type="number" step="0.01" id="rec-valor" placeholder="Valor (R$)" required class="border p-2 rounded focus:ring-2 focus:ring-emerald-600">
+                    <input type="date" id="rec-data" required class="border p-2 rounded focus:ring-2 focus:ring-emerald-600">
+                    <button type="submit" class="bg-[#1b4332] text-white font-bold p-2 rounded hover:opacity-90">Salvar Receita</button>
+                </form>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow overflow-x-auto">
+                <h3 class="text-lg font-bold mb-4">Histórico de Receitas</h3>
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b bg-slate-50 text-slate-600 text-sm">
+                            <th class="p-3">Data</th>
+                            <th class="p-3">Origem</th>
+                            <th class="p-3">Valor</th>
+                            <th class="p-3 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-receitas"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ABA: DESPESAS -->
+        <section id="aba-despesas" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold text-[#58181f] mb-4"><i class="fa-solid fa-plus-circle mr-2"></i>Nova Despesa</h2>
+                <form id="form-despesa" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="text" id="desp-detalhe" placeholder="Detalhamento (Ex: Supermercado)" required class="border p-2 rounded focus:ring-2 focus:ring-rose-600">
+                    <input type="number" step="0.01" id="desp-valor" placeholder="Valor (R$)" required class="border p-2 rounded focus:ring-2 focus:ring-rose-600">
+                    <input type="date" id="desp-data" required class="border p-2 rounded focus:ring-2 focus:ring-rose-600">
+                    <button type="submit" class="bg-[#58181f] text-white font-bold p-2 rounded hover:opacity-90">Salvar Despesa</button>
+                </form>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow overflow-x-auto">
+                <h3 class="text-lg font-bold mb-4">Histórico de Despesas</h3>
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b bg-slate-50 text-slate-600 text-sm">
+                            <th class="p-3">Data</th>
+                            <th class="p-3">Detalhamento</th>
+                            <th class="p-3">Valor</th>
+                            <th class="p-3 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-despesas"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ABA: INVESTIMENTOS -->
+        <section id="aba-investimentos" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-bold text-[#1d3557] mb-4"><i class="fa-solid fa-plus-circle mr-2"></i>Novo Investimento</h2>
+                <form id="form-investimento" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="text" id="inv-tipo" placeholder="Tipo (Ex: Tesouro Direto)" required class="border p-2 rounded focus:ring-2 focus:ring-blue-600">
+                    <input type="number" step="0.01" id="inv-valor" placeholder="Valor (R$)" required class="border p-2 rounded focus:ring-2 focus:ring-blue-600">
+                    <input type="date" id="inv-data" required class="border p-2 rounded focus:ring-2 focus:ring-blue-600">
+                    <button type="submit" class="bg-[#1d3557] text-white font-bold p-2 rounded hover:opacity-90">Salvar Aplicação</button>
+                </form>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow overflow-x-auto">
+                <h3 class="text-lg font-bold mb-4">Histórico de Investimentos</h3>
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b bg-slate-50 text-slate-600 text-sm">
+                            <th class="p-3">Data</th>
+                            <th class="p-3">Tipo de Investimento</th>
+                            <th class="p-3">Valor</th>
+                            <th class="p-3 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-investimentos"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SCRIPT DO FIREBASE E APLICAÇÃO -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
