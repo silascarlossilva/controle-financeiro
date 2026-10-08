@@ -3,15 +3,23 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // TODO: Substitua com as configurações do seu projeto Firebase
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_AUTH_DOMAIN",
-    projectId: "SEU_PROJECT_ID",
-    storageBucket: "SEU_STORAGE_BUCKET",
-    messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-    appId: "SEU_APP_ID"
+  apiKey: "AIzaSyAdZofJKPJWAG9uTdFdJa1-kMdx8OvEDzw",
+  authDomain: "appfinancas-61acf.firebaseapp.com",
+  projectId: "appfinancas-61acf",
+  storageBucket: "appfinancas-61acf.firebasestorage.app",
+  messagingSenderId: "795334066065",
+  appId: "1:795334066065:web:e5278384af43f18e892430"
 };
 
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
