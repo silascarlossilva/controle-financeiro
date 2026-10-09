@@ -1,8 +1,6 @@
-// Importe os SDKs do Firebase necessários
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Configuração do seu aplicativo Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAdZofJKPJWAG9uTdFdJa1-kMdx8OvEDzw",
   authDomain: "appfinancas-61acf.firebaseapp.com",
@@ -12,37 +10,78 @@ const firebaseConfig = {
   appId: "1:795334066065:web:e5278384af43f18e892430"
 };
 
-// Inicializar o Firebase corretamente (sem duplicar variáveis)
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Controle de Abas na Tela
+// --- AUTENTICAÇÃO GMAIL ---
+window.handleCredentialResponse = function(response) {
+  try {
+    const base64Url = response.credential.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    const googleUser = JSON.parse(jsonPayload);
+    const email = googleUser.email.toLowerCase();
+
+    if (email !== 'silascarlossilva@gmail.com') {
+      alert('Acesso negado.');
+      return;
+    }
+
+    localStorage.setItem('appFinancas.user', JSON.stringify({ email: email }));
+    checarSessao();
+  } catch(e) {
+    alert('Erro no login.');
+  }
+};
+
+window.FazerLogout = function() {
+  localStorage.removeItem('appFinancas.user');
+  checarSessao();
+};
+
+function checarSessao() {
+  const user = localStorage.getItem('appFinancas.user');
+  const login = document.getElementById('tela-login');
+  const conteudo = document.getElementById('app-conteudo');
+  const display = document.getElementById('user-email');
+
+  if (user) {
+    if(login) login.classList.add('hidden');
+    if(conteudo) conteudo.classList.remove('hidden');
+    if(display) display.innerText = JSON.parse(user).email;
+  } else {
+    if(login) login.classList.remove('hidden');
+    if(conteudo) conteudo.classList.add('hidden');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', checarSessao);
+
+// --- ABAS ---
 window.mudarAba = function(aba) {
-    document.getElementById('aba-dashboard').classList.add('hidden');
-    document.getElementById('aba-receitas').classList.add('hidden');
-    document.getElementById('aba-despesas').classList.add('hidden');
-    document.getElementById('aba-investimentos').classList.add('hidden');
-    
+    ['dashboard', 'receitas', 'despesas', 'investimentos'].forEach(a => {
+        document.getElementById(`aba-${a}`).classList.add('hidden');
+    });
     document.getElementById(`aba-${aba}`).classList.remove('hidden');
-}
 
-// Variáveis para cálculo do resumo
-let totalRec = 0;
-let totalDesp = 0;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    event.currentTarget.classList.add('on');
+};
 
+let tRec = 0, tDesp = 0;
 function atualizarResumo() {
-    const saldo = totalRec - totalDesp;
-    document.getElementById('total-receitas').innerText = `R$ ${totalRec.toFixed(2)}`;
-    document.getElementById('total-despesas').innerText = `R$ ${totalDesp.toFixed(2)}`;
-    
-    const elSaldo = document.getElementById('total-saldo');
-    elSaldo.innerText = `R$ ${saldo.toFixed(2)}`;
-    elSaldo.className = `text-2xl font-bold ${saldo >= 0 ? 'text-blue-800' : 'text-rose-600'}`;
+    const saldo = tRec - tDesp;
+    document.getElementById('total-receitas').innerText = `R$ ${tRec.toFixed(2)}`;
+    document.getElementById('total-despesas').innerText = `R$ ${tDesp.toFixed(2)}`;
+    document.getElementById('total-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
 }
 
-// --- RECEITAS ---
+// --- RECEITAS (FIREBASE) ---
 const formReceita = document.getElementById('form-receita');
-if (formReceita) {
+if(formReceita) {
   formReceita.addEventListener('submit', async (e) => {
       e.preventDefault();
       await addDoc(collection(db, "receitas"), {
@@ -51,33 +90,32 @@ if (formReceita) {
           data: document.getElementById('rec-data').value
       });
       formReceita.reset();
+      alert('Receita salva com sucesso!');
   });
 }
 
-// Ouvir dados em tempo real do Firebase (Receitas)
 onSnapshot(collection(db, "receitas"), (snapshot) => {
     const lista = document.getElementById('lista-receitas');
-    if (!lista) return;
+    if(!lista) return;
     lista.innerHTML = '';
-    totalRec = 0;
+    tRec = 0;
     snapshot.forEach((docSnap) => {
         const item = docSnap.data();
-        totalRec += item.valor;
+        tRec += item.valor || 0;
         lista.innerHTML += `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-3">${item.data}</td>
-                <td class="p-3">${item.origem}</td>
-                <td class="p-3 text-emerald-600 font-semibold">R$ ${item.valor.toFixed(2)}</td>
-                <td class="p-3 text-center"><button onclick="deletarRegistro('receitas', '${docSnap.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button></td>
-            </tr>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm">
+                <div><b>${item.origem}</b><br><small class="text-slate-400">${item.data}</small></div>
+                <div class="text-emerald-600 font-bold">+ R$ ${(item.valor || 0).toFixed(2)}</div>
+                <button onclick="deletarItem('receitas', '${docSnap.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+            </div>
         `;
     });
     atualizarResumo();
 });
 
-// --- DESPESAS ---
+// --- DESPESAS (FIREBASE) ---
 const formDespesa = document.getElementById('form-despesa');
-if (formDespesa) {
+if(formDespesa) {
   formDespesa.addEventListener('submit', async (e) => {
       e.preventDefault();
       await addDoc(collection(db, "despesas"), {
@@ -86,32 +124,32 @@ if (formDespesa) {
           data: document.getElementById('desp-data').value
       });
       formDespesa.reset();
+      alert('Despesa salva com sucesso!');
   });
 }
 
 onSnapshot(collection(db, "despesas"), (snapshot) => {
     const lista = document.getElementById('lista-despesas');
-    if (!lista) return;
+    if(!lista) return;
     lista.innerHTML = '';
-    totalDesp = 0;
+    tDesp = 0;
     snapshot.forEach((docSnap) => {
         const item = docSnap.data();
-        totalDesp += item.valor;
+        tDesp += item.valor || 0;
         lista.innerHTML += `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-3">${item.data}</td>
-                <td class="p-3">${item.detalhe}</td>
-                <td class="p-3 text-rose-600 font-semibold">R$ ${item.valor.toFixed(2)}</td>
-                <td class="p-3 text-center"><button onclick="deletarRegistro('despesas', '${docSnap.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button></td>
-            </tr>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm">
+                <div><b>${item.detalhe}</b><br><small class="text-slate-400">${item.data}</small></div>
+                <div class="text-rose-600 font-bold">- R$ ${(item.valor || 0).toFixed(2)}</div>
+                <button onclick="deletarItem('despesas', '${docSnap.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+            </div>
         `;
     });
     atualizarResumo();
 });
 
-// --- INVESTIMENTOS ---
+// --- INVESTIMENTOS (FIREBASE) ---
 const formInvestimento = document.getElementById('form-investimento');
-if (formInvestimento) {
+if(formInvestimento) {
   formInvestimento.addEventListener('submit', async (e) => {
       e.preventDefault();
       await addDoc(collection(db, "investimentos"), {
@@ -120,28 +158,27 @@ if (formInvestimento) {
           data: document.getElementById('inv-data').value
       });
       formInvestimento.reset();
+      alert('Investimento salvo com sucesso!');
   });
 }
 
 onSnapshot(collection(db, "investimentos"), (snapshot) => {
     const lista = document.getElementById('lista-investimentos');
-    if (!lista) return;
+    if(!lista) return;
     lista.innerHTML = '';
     snapshot.forEach((docSnap) => {
         const item = docSnap.data();
         lista.innerHTML += `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-3">${item.data}</td>
-                <td class="p-3">${item.tipo}</td>
-                <td class="p-3 text-blue-600 font-semibold">R$ ${item.valor.toFixed(2)}</td>
-                <td class="p-3 text-center"><button onclick="deletarRegistro('investimentos', '${docSnap.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button></td>
-            </tr>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm">
+                <div><b>${item.tipo}</b><br><small class="text-slate-400">${item.data}</small></div>
+                <div class="text-blue-600 font-bold">R$ ${(item.valor || 0).toFixed(2)}</div>
+                <button onclick="deletarItem('investimentos', '${docSnap.id}')" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+            </div>
         `;
     });
 });
 
-// Função global para excluir registros
-window.deletarRegistro = async function(colecao, id) {
+window.deletarItem = async function(colecao, id) {
     if(confirm("Deseja realmente excluir este item?")) {
         await deleteDoc(doc(db, colecao, id));
     }
