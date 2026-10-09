@@ -2,13 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// TODO: Substitua com as configurações do seu projeto Firebase
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
+// Configuração do seu aplicativo Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAdZofJKPJWAG9uTdFdJa1-kMdx8OvEDzw",
   authDomain: "appfinancas-61acf.firebaseapp.com",
@@ -18,9 +12,7 @@ const firebaseConfig = {
   appId: "1:795334066065:web:e5278384af43f18e892430"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-// Inicializar Firebase
+// Inicializar o Firebase corretamente (sem duplicar variáveis)
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -50,19 +42,22 @@ function atualizarResumo() {
 
 // --- RECEITAS ---
 const formReceita = document.getElementById('form-receita');
-formReceita.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addDoc(collection(db, "receitas"), {
-        origem: document.getElementById('rec-origem').value,
-        valor: parseFloat(document.getElementById('rec-valor').value),
-        data: document.getElementById('rec-data').value
-    });
-    formReceita.reset();
-});
+if (formReceita) {
+  formReceita.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await addDoc(collection(db, "receitas"), {
+          origem: document.getElementById('rec-origem').value,
+          valor: parseFloat(document.getElementById('rec-valor').value),
+          data: document.getElementById('rec-data').value
+      });
+      formReceita.reset();
+  });
+}
 
 // Ouvir dados em tempo real do Firebase (Receitas)
 onSnapshot(collection(db, "receitas"), (snapshot) => {
     const lista = document.getElementById('lista-receitas');
+    if (!lista) return;
     lista.innerHTML = '';
     totalRec = 0;
     snapshot.forEach((docSnap) => {
@@ -82,18 +77,21 @@ onSnapshot(collection(db, "receitas"), (snapshot) => {
 
 // --- DESPESAS ---
 const formDespesa = document.getElementById('form-despesa');
-formDespesa.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addDoc(collection(db, "despesas"), {
-        detalhe: document.getElementById('desp-detalhe').value,
-        valor: parseFloat(document.getElementById('desp-valor').value),
-        data: document.getElementById('desp-data').value
-    });
-    formDespesa.reset();
-});
+if (formDespesa) {
+  formDespesa.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await addDoc(collection(db, "despesas"), {
+          detalhe: document.getElementById('desp-detalhe').value,
+          valor: parseFloat(document.getElementById('desp-valor').value),
+          data: document.getElementById('desp-data').value
+      });
+      formDespesa.reset();
+  });
+}
 
 onSnapshot(collection(db, "despesas"), (snapshot) => {
     const lista = document.getElementById('lista-despesas');
+    if (!lista) return;
     lista.innerHTML = '';
     totalDesp = 0;
     snapshot.forEach((docSnap) => {
@@ -113,18 +111,21 @@ onSnapshot(collection(db, "despesas"), (snapshot) => {
 
 // --- INVESTIMENTOS ---
 const formInvestimento = document.getElementById('form-investimento');
-formInvestimento.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await addDoc(collection(db, "investimentos"), {
-        tipo: document.getElementById('inv-tipo').value,
-        valor: parseFloat(document.getElementById('inv-valor').value),
-        data: document.getElementById('inv-data').value
-    });
-    formInvestimento.reset();
-});
+if (formInvestimento) {
+  formInvestimento.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await addDoc(collection(db, "investimentos"), {
+          tipo: document.getElementById('inv-tipo').value,
+          valor: parseFloat(document.getElementById('inv-valor').value),
+          data: document.getElementById('inv-data').value
+      });
+      formInvestimento.reset();
+  });
+}
 
 onSnapshot(collection(db, "investimentos"), (snapshot) => {
     const lista = document.getElementById('lista-investimentos');
+    if (!lista) return;
     lista.innerHTML = '';
     snapshot.forEach((docSnap) => {
         const item = docSnap.data();
