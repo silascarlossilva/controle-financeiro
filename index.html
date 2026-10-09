@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#6A0BB5">
@@ -65,9 +66,6 @@ h1,h2,h3,p{margin-top:0}
 .login-logo{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:24px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));box-shadow:inset 0 -4px 0 var(--accent);margin:0 auto 20px}
 .login-card h1{margin:0 0 8px;font-size:24px}
 .login-card p{color:var(--ink-2);margin:0 0 24px;font-size:15px}
-.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#3c4043;border:1.5px solid #dadce0;border-radius:14px;padding:14px;font-weight:600;font-size:15px;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:.15s}
-.btn-google:hover{background:#f8f9fa;border-color:#c6c6c6}
-.btn-google svg{width:20px;height:20px}
 
 /* ---- resumo ---- */
 .hero{color:#fff;border-radius:28px;padding:22px 20px 18px;margin:6px 0 18px;background:radial-gradient(120% 90% at 100% 0%,rgba(255,122,0,.42),transparent 55%),linear-gradient(145deg,#8E1AE0 0%,#6A0BB5 55%,#43087F 100%);box-shadow:0 14px 34px rgba(95,10,170,.28)}
@@ -331,22 +329,40 @@ function saveUserData(){
   } catch(e){}
 }
 
-function loginWithGoogleSimulation(){
-  var email = prompt('Digite seu e-mail do Gmail para autenticar e guardar seu histórico:', 'silascarlossilva@gmail.com');
-  if (!email || !email.includes('@')) return;
-  email = email.trim().toLowerCase();
-  var name = email.split('@')[0];
-  name = name.charAt(0).toUpperCase() + name.slice(1);
-  currentUser = {
-    email: email,
-    name: name,
-    initial: name.charAt(0).toUpperCase()
-  };
-  localStorage.setItem('controleFinanceiro.activeUser', JSON.stringify(currentUser));
-  loadUserData(email);
-  render();
-  showToast('Bem-vindo, ' + name + '!');
-}
+// Autenticação oficial e segura com Google (Gmail)
+window.handleCredentialResponse = function(response) {
+  try {
+    var base64Url = response.credential.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    var googleUser = JSON.parse(jsonPayload);
+    var email = googleUser.email.toLowerCase();
+
+    // SEGURANÇA: Restrito apenas ao seu e-mail
+    var emailsPermitidos = ['silascarlossilva@gmail.com'];
+    if (!emailsPermitidos.includes(email)) {
+      alert('Acesso negado. Este e-mail não tem autorização para usar este aplicativo.');
+      return;
+    }
+
+    var name = googleUser.name || email.split('@')[0];
+    currentUser = {
+      email: email,
+      name: name,
+      initial: name.charAt(0).toUpperCase()
+    };
+    
+    localStorage.setItem('controleFinanceiro.activeUser', JSON.stringify(currentUser));
+    loadUserData(email);
+    render();
+    showToast('Bem-vindo, ' + name + '!');
+  } catch(err) {
+    alert('Erro ao processar autenticação do Google.');
+  }
+};
 
 function logout(){
   currentUser = null;
@@ -530,11 +546,18 @@ function render(){
     root.innerHTML = '<div class="login-screen"><div class="login-card">' +
       '<div class="login-logo">R$</div>' +
       '<h1>Controle Financeiro</h1>' +
-      '<p>Entre com sua conta Google (Gmail) para autenticar e guardar todo o seu histórico financeiro.</p>' +
-      '<button class="btn-google" data-action="google-login">' +
-        '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>' +
-        'Entrar com o Google (Gmail)' +
-      '</button>' +
+      '<p>Faça login com sua conta autorizada do Gmail para acessar o sistema.</p>' +
+      '<div id="g_id_onload" ' +
+           'data-client_id="SEU_CLIENT_ID_AQUI.apps.googleusercontent.com" ' +
+           'data-callback="handleCredentialResponse" ' +
+           'data-auto_prompt="false"></div>' +
+      '<div class="g_id_signin" ' +
+           'data-type="standard" ' +
+           'data-shape="rectangular" ' +
+           'data-theme="outline" ' +
+           'data-text="sign_in_with" ' +
+           'data-size="large" ' +
+           'data-logo_alignment="left"></div>' +
     '</div></div>';
     return;
   }
@@ -568,181 +591,4 @@ function render(){
   $('[data-icon="home"]').innerHTML = icon('home', 20);
   $('[data-icon="up"]').innerHTML = icon('up', 20);
   $('[data-icon="down"]').innerHTML = icon('down', 20);
-  $('[data-icon="trend"]').innerHTML = icon('trend', 20);
-  $('[data-icon="tag"]').innerHTML = icon('tag', 20);
-  $('[data-icon="left"]').innerHTML = icon('left', 20);
-  $('[data-icon="right"]').innerHTML = icon('right', 20);
-  $('[data-icon="more"]').innerHTML = icon('more', 20);
-}
-
-function openSheet(html){
-  $('#sheet-root').innerHTML = '<div class="overlay" data-action="close-sheet"><div class="sheet" role="dialog" aria-modal="true">' + html + '</div></div>';
-}
-function closeSheet(){ $('#sheet-root').innerHTML = ''; }
-
-function showToast(msg){
-  var t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 2500);
-}
-
-function openTxSheet(type, item){
-  var isEdit = !!item;
-  var T = TIPOS[type];
-  var tags = tagsOf(type);
-  var tagOpts = tags.map(function(t){
-    return '<option value="' + t.id + '"' + (item && item.tagId === t.id ? ' selected' : '') + '>' + t.emoji + ' ' + t.name + '</option>';
-  }).join('');
-  var payOpts = PAGAMENTOS.map(function(p){
-    return '<option value="' + p + '"' + (item && item.pay === p ? ' selected' : '') + '>' + p + '</option>';
-  }).join('');
-  var valStr = item ? valorInput(item.value) : '';
-  var dateStr = item ? item.date : (ui.ym === todayISO().slice(0, 7) ? todayISO() : ui.ym + '-01');
-
-  openSheet(
-    '<div class="sheet-head"><h2>' + (isEdit ? T.editar : T.novo) + '</h2>' +
-    '<button class="icon" data-action="close-sheet" aria-label="Fechar">' + icon('x', 22) + '</button></div>' +
-    '<div class="err" id="tx-err"></div>' +
-    '<form id="tx-form" data-edit-id="' + (item ? item.id : '') + '" data-tx-type="' + type + '">' +
-      '<div class="field"><label for="f-valor">Valor (R$)</label><input id="f-valor" inputmode="decimal" placeholder="0,00" value="' + valStr + '" required autofocus></div>' +
-      '<div class="field"><label for="f-desc">Descrição</label><input id="f-desc" placeholder="Ex: Supermercado, Aluguel..." value="' + esc(item ? item.desc : '') + '" required></div>' +
-      '<div class="field"><label for="f-tag">Tag / Categoria</label><select id="f-tag"><option value="">Sem tag</option>' + tagOpts + '</select></div>' +
-      '<div class="field"><label for="f-date">Data</label><input id="f-date" type="date" value="' + dateStr + '" required></div>' +
-      '<div class="field"><label for="f-pay">Forma de pagamento</label><select id="f-pay"><option value="">Nenhuma</option>' + payOpts + '</select></div>' +
-      '<div class="field"><label for="f-note">Anotação (opcional)</label><input id="f-note" placeholder="Detalhes adicionais" value="' + esc(item ? item.note : '') + '"></div>' +
-      '<div class="sheet-actions">' +
-        (isEdit ? '<button type="button" class="btn btn-danger" data-action="delete-tx" data-id="' + item.id + '">Excluir</button>' : '') +
-        '<button type="submit" class="btn btn-primary grow">Salvar</button>' +
-      '</div>' +
-    '</form>'
-  );
-  $('#f-valor').focus();
-}
-
-function openDataSheet(){
-  openSheet(
-    '<div class="sheet-head"><h2>Dados e Histórico</h2>' +
-    '<button class="icon" data-action="close-sheet" aria-label="Fechar">' + icon('x', 22) + '</button></div>' +
-    '<p class="muted">O histórico está seguro e guardado no navegador para o Gmail: <b>' + esc(currentUser.email) + '</b>.</p>' +
-    '<div class="stack">' +
-      '<button class="btn btn-ghost" data-action="export">Exportar histórico (JSON)</button>' +
-      '<button class="btn btn-danger" data-action="logout">Sair da conta Google</button>' +
-    '</div>'
-  );
-}
-
-document.addEventListener('click', function(e){
-  var btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  var action = btn.getAttribute('data-action');
-
-  if (action === 'google-login') {
-    loginWithGoogleSimulation();
-  } else if (action === 'logout') {
-    logout();
-    closeSheet();
-  } else if (action === 'nav') {
-    ui.view = btn.getAttribute('data-view');
-    render();
-  } else if (action === 'prev-month') {
-    ui.ym = shiftYM(ui.ym, -1);
-    render();
-  } else if (action === 'next-month') {
-    ui.ym = shiftYM(ui.ym, 1);
-    render();
-  } else if (action === 'today-month') {
-    ui.ym = todayISO().slice(0, 7);
-    render();
-  } else if (action === 'data-menu') {
-    openDataSheet();
-  } else if (action === 'close-sheet') {
-    closeSheet();
-  } else if (action === 'add') {
-    openTxSheet(btn.getAttribute('data-type'));
-  } else if (action === 'edit') {
-    var t = state.tx.filter(function(x){ return x.id === btn.getAttribute('data-id'); })[0];
-    if (t) openTxSheet(t.type, t);
-  } else if (action === 'delete-tx') {
-    var id = btn.getAttribute('data-id');
-    state.tx = state.tx.filter(function(x){ return x.id !== id; });
-    saveUserData();
-    closeSheet();
-    showToast('Movimentação excluída');
-    render();
-  } else if (action === 'filter-tag') {
-    var type = VIEW_TYPE[ui.view];
-    if (type) {
-      ui.filterTag[type] = btn.getAttribute('data-id');
-      var body = $('#list-body');
-      if (body) body.innerHTML = listBody(type);
-      document.querySelectorAll('.chips .chip').forEach(function(c){ c.classList.remove('on'); });
-      btn.classList.add('on');
-    }
-  } else if (action === 'export') {
-    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-    var dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", "controle_financeiro_" + currentUser.email + "_" + todayISO() + ".json");
-    dlAnchorElem.click();
-    closeSheet();
-    showToast('Histórico exportado com sucesso!');
-  }
-});
-
-document.addEventListener('submit', function(e){
-  if (e.target && e.target.id === 'tx-form'){
-    e.preventDefault();
-    var val = parseValor($('#f-valor').value);
-    if (!val || isNaN(val) || val <= 0){
-      $('#tx-err').textContent = 'Digite um valor válido.';
-      $('#f-valor').focus();
-      return;
-    }
-    var form = e.target;
-    var editId = form.getAttribute('data-edit-id');
-    var type = form.getAttribute('data-tx-type');
-    var desc = $('#f-desc').value.trim() || 'Movimentação';
-    var tagId = $('#f-tag').value;
-    var date = $('#f-date').value;
-    var pay = $('#f-pay').value;
-    var note = $('#f-note').value.trim();
-
-    if (editId){
-      var t = state.tx.filter(function(x){ return x.id === editId; })[0];
-      if (t){
-        t.value = val;
-        t.desc = desc;
-        t.tagId = tagId;
-        t.date = date;
-        t.pay = pay;
-        t.note = note;
-      }
-    } else {
-      state.tx.push({
-        id: uid(),
-        ts: Date.now(),
-        type: type,
-        value: val,
-        desc: desc,
-        tagId: tagId,
-        date: date,
-        pay: pay,
-        note: note
-      });
-    }
-
-    saveUserData();
-    closeSheet();
-    showToast('Salvo com sucesso!');
-    render();
-  }
-});
-
-loadUserSession();
-render();
-
-})();
-</script>
-</body>
-</html>
+  $('[data-icon="trend"]').innerHTML = icon('trend', 20
